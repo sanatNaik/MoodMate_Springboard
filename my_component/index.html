@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>MoodMate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --bg: #0d0d0f; --surface: #17171c; --lift: #1f1f28;
+            --border: rgba(255,255,255,0.07); --secondary: #b9801d;
+            --secondary-dim: rgba(185, 169, 29, 0.824); --cream: #f5ede3;
+            --muted: #6b6b7a; --text: #e8e2d9; --r-lg: 28px;
+        }
+
+        html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+        .page { max-width: 960px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 28px; }
+
+        /* Header */
+        .header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 10px; }
+        .logo { font-family: 'Syne', sans-serif; font-size: 3rem; font-weight: 800; color: var(--cream); line-height: 1; }
+        .logo span { color: var(--secondary); }
+		.tagline {
+			font-size: 0.85rem;
+			color: var(--muted);
+			margin-top: 4px;
+		}
+        /* Grid System */
+        .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: stretch; }
+
+        .card {
+			background: var(--surface); 
+			border: 1px solid var(--border); 
+			border-radius: var(--r-lg); 
+			padding: 24px; 
+			display: flex;
+			flex-direction: column;
+			height: 320px;
+			box-sizing: border-box;
+		}
+
+        .label { 
+            font-family: 'Syne', sans-serif;
+            font-size: 0.7rem; 
+            color: var(--muted); 
+            letter-spacing: 2px; 
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+
+        /* Input Card Content */
+        textarea { 
+            width: 100%; 
+            background: var(--lift); 
+            border: 1px solid var(--border); 
+            border-radius: 14px; 
+            color: var(--text); 
+            padding: 16px; 
+            flex: 1; /* Fills available space in card */
+            resize: none; 
+            outline: none; 
+            font-family: inherit; 
+            margin-bottom: 16px;
+            font-size: 1rem;
+			box-sizing: border-box;
+        }
+
+        .gen-btn { 
+            background: var(--secondary); color: #000; border: none; border-radius: 50px; 
+            font-family: 'Syne', sans-serif; font-weight: 700; padding: 14px; cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .gen-btn:hover { background: var(--secondary-dim); }
+        .gen-btn:active { transform: scale(0.98); }
+
+        /* Detection Card Content (Box-in-Box) */
+        .inner-display-box {
+			background: var(--lift);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			flex: 1;
+			min-height: 0;   /* 🔥 critical fix */
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 20px;
+		}
+        .emotion-value { 
+            font-family: 'Syne', sans-serif; 
+            font-size: 2.5rem; 
+            color: var(--secondary); 
+            font-weight: 800; 
+            text-transform: uppercase;
+            letter-spacing: -1px;
+        }
+        .status-text { color: var(--muted); font-style: italic; font-size: 0.95rem; }
+
+        /* Player Section */
+        .player-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 30px; margin-top: 10px; }
+        .vinyl { width: 90px; height: 90px; border-radius: 50%; background: conic-gradient(#1a1a1f, #2a2a32, #1a1a1f); flex-shrink: 0; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .vinyl.spinning { animation: spin 3s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .tracklist { display: flex; gap: 14px; overflow-x: scroll; padding: 10px 0; margin-top: 20px; scrollbar-width:auto; }
+        .track-chip { 
+            background: var(--lift); border: 1px solid var(--border); border-radius: 16px; 
+            padding: 14px 22px; cursor: pointer; min-width: 200px; transition: all 0.2s;
+        }
+        .track-chip:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.2); }
+        .track-chip.active { border-color: var(--secondary); background: var(--secondary-dim); }
+
+        @media (max-width: 768px) { .top-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header-left">
+			<div class="logo">Mood<span>Mate</span></div>
+			<div class="tagline">AI-powered emotion-based music</div>
+		</div>
+
+        <div class="top-grid">
+            <div class="card">
+                <div class="label">Vibe Check</div>
+                <textarea id="moodInput" placeholder="How's your soul feeling?"></textarea>
+                <button class="gen-btn" id="genBtn" onclick="sendMoodToPython()">Generate Experience</button>
+            </div>
+
+            <div class="card">
+                <div class="label">Emotion Detected</div>
+                <div class="inner-display-box" id="emotionBox">
+                    <div id="statusText" class="status-text">Waiting for your frequency...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="playerSection" style="display:none;">
+            <div class="player-card">
+                <div style="display: flex; align-items: center; gap: 25px;">
+                    <div class="vinyl" id="vinyl"></div>
+                    <div>
+                        <div id="playerName" style="font-weight: 700; font-size: 1.5rem; color: var(--cream);">Song Name</div>
+                        <div id="playerArtist" style="color: var(--muted); margin-top: 4px; font-size: 1rem;">Artist</div>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 30px; margin-top: 25px;">
+                    <button onclick="prevTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">◀◀</button>
+                    <button id="playPauseBtn" onclick="togglePlay()" style="background: var(--secondary); border-radius: 50%; width: 60px; height: 60px; border: none; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center;">▶</button>
+                    <button onclick="nextTrack()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">▶▶</button>
+                </div>
+            </div>
+            <div class="tracklist" id="tracklist"></div>
+        </div>
+    </div>
+
+    <audio id="audioEl"></audio>
+
+    <script>
+        // --- BRIDGE ---
+        function sendMessage(type, data) {
+            window.parent.postMessage({ isStreamlitMessage: true, type: type, ...data }, "*");
+        }
+
+        function updateHeight() {
+            sendMessage("streamlit:setComponentHeight", { height: document.body.scrollHeight });
+        }
+
+        function sendMoodToPython() {
+            const val = document.getElementById('moodInput').value.trim();
+            if (!val) return;
+            document.getElementById('statusText').innerText = "Analyzing vibe...";
+            sendMessage("streamlit:setComponentValue", { value: val });
+        }
+
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "streamlit:render") {
+                const moodData = event.data.args.mood_data;
+                if (moodData) { renderUI(moodData); }
+            }
+        });
+
+        window.addEventListener("load", () => {
+            sendMessage("streamlit:componentReady", { apiVersion: 1 });
+            updateHeight();
+        });
+
+        // --- UI & LOGIC ---
+        let songs = [], currentIdx = 0;
+        const audioEl = document.getElementById('audioEl');
+
+        function renderUI(data) {
+            document.getElementById('emotionBox').innerHTML = `<div class="emotion-value">${data.emotion}</div>`;
+            songs = data.songs;
+            const list = document.getElementById('tracklist');
+            list.innerHTML = '';
+            
+            songs.forEach((s, i) => {
+                const chip = document.createElement('div');
+                chip.className = 'track-chip';
+                chip.innerHTML = `<div style="font-weight:700; color:var(--cream);">${s.name}</div><div style="font-size:0.85rem; color:var(--muted);">${s.artist}</div>`;
+                chip.onclick = () => playTrack(i);
+                list.appendChild(chip);
+            });
+
+            document.getElementById('playerSection').style.display = 'block';
+            playTrack(0);
+            setTimeout(updateHeight, 150);
+        }
+
+        function playTrack(idx) {
+            currentIdx = idx;
+            const s = songs[idx];
+            document.getElementById('playerName').innerText = s.name;
+            document.getElementById('playerArtist').innerText = s.artist;
+            document.querySelectorAll('.track-chip').forEach((c, i) => c.classList.toggle('active', i === idx));
+
+            if(s.url_spotify_preview) {
+                audioEl.src = s.url_spotify_preview;
+                audioEl.play().catch(e => console.log("User interaction required"));
+                document.getElementById('playPauseBtn').innerText = '▮▮';
+                document.getElementById('vinyl').classList.add('spinning');
+            }
+        }
+
+        function togglePlay() {
+            if (audioEl.paused) { audioEl.play(); document.getElementById('playPauseBtn').innerText = '▮▮'; }
+            else { audioEl.pause(); document.getElementById('playPauseBtn').innerText = '▶'; }
+        }
+        function nextTrack() { playTrack((currentIdx + 1) % songs.length); }
+        function prevTrack() { playTrack((currentIdx - 1 + songs.length) % songs.length); }
+    </script>
+</body>
+</html>
