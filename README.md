@@ -217,11 +217,17 @@ Top-K similar songs are recommended
 ## 📁 Project Structure
 MoodMate/
 │
+
 ├── app.py
+
 ├── moodmate_pipeline.py
+
 ├── notebooks/
+
 │ └── moodmate_db_nn.ipynb
+
 ├── requirements.txt
+
 ├── README.md
 
 
@@ -232,5 +238,5 @@ MoodMate/
 ```bash
 pip install -r requirements.txt
 streamlit run app.py
-
+```
 <img width="1018" height="876" alt="Screenshot 2026-03-25 164628" src="https://github.com/user-attachments/assets/66a90563-ce50-4ec3-bef4-5635205dfcbb" />
